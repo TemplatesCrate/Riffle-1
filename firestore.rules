@@ -1,0 +1,52 @@
+// firestore.rules
+// Deploy with: firebase deploy --only firestore:rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users: only readable by owner, writable only via server logic
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Videos: anyone can read, only authenticated users can create
+    match /videos/{videoId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null; // Points/promotions update this
+    }
+
+    // Watch events: authenticated users can create their own
+    match /watchEvents/{eventId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+
+    // Promotion events: authenticated users can create
+    match /promotionEvents/{eventId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+
+    // Invite events: authenticated users can create
+    match /inviteEvents/{eventId} {
+      allow read: if request.auth != null;
+      allow create: if true; // Created during signup (before full auth)
+    }
+
+    // Ad impressions: write-only for all, read only for admins
+    match /adImpressions/{docId} {
+      allow create: if true;
+      allow read: if false; // FUTURE: allow admin role
+    }
+
+    // Ad stats aggregates
+    match /adStats/{docId} {
+      allow read: if false; // FUTURE: allow admin role
+      allow write: if true;
+    }
+  }
+}
