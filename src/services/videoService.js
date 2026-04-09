@@ -16,14 +16,39 @@ import { awardSubmitPoints } from './pointsService';
 
 // Extract YouTube video ID from various URL formats
 export function extractYouTubeId(url) {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-    /youtube\.com\/shorts\/([^&\n?#]+)/,
-  ];
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
+  if (!url || typeof url !== 'string') return null;
+
+  try {
+    const parsed = new URL(url.trim());
+
+    // youtu.be/VIDEO_ID
+    if (parsed.hostname === 'youtu.be') {
+      const id = parsed.pathname.slice(1).split('/')[0];
+      return id || null;
+    }
+
+    // youtube.com/shorts/VIDEO_ID
+    if (parsed.pathname.startsWith('/shorts/')) {
+      const id = parsed.pathname.split('/shorts/')[1]?.split('/')[0];
+      return id || null;
+    }
+
+    // youtube.com/embed/VIDEO_ID
+    if (parsed.pathname.startsWith('/embed/')) {
+      const id = parsed.pathname.split('/embed/')[1]?.split('/')[0];
+      return id || null;
+    }
+
+    // youtube.com/watch?v=VIDEO_ID  (v= can appear anywhere in the query string)
+    if (parsed.hostname.includes('youtube.com') && parsed.searchParams.has('v')) {
+      return parsed.searchParams.get('v') || null;
+    }
+  } catch {
+    // URL constructor failed — fall back to regex for malformed URLs
+    const match = url.match(/(?:v=|youtu\.be\/|\/shorts\/|\/embed\/)([a-zA-Z0-9_-]{11})/);
+    return match ? match[1] : null;
   }
+
   return null;
 }
 
