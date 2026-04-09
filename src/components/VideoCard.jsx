@@ -24,8 +24,10 @@ export default function VideoCard({ video, onPointsEarned, onRefreshPoints }) {
   const youtubeId = video.youtubeId || extractYouTubeId(video.url || '');
 
   const handlePlay = useCallback(() => {
-    if (earned || !currentUser || isOwn) return;
+    // Always start playing — never block the video itself
     setPlaying(true);
+    // Only start the points-earning timer if the user is eligible
+    if (earned || !currentUser || isOwn) return;
     intervalRef.current = setInterval(() => {
       setWatchTime((t) => {
         const next = t + 1;
