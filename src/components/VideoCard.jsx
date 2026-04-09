@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { awardWatchPoints, promoteVideo, POINTS } from '../services/pointsService';
+import { getYouTubeEmbedUrl, extractYouTubeId } from '../services/videoService';
 import styles from './VideoCard.module.css';
 
 const WATCH_THRESHOLD_SECONDS = 30; // Must watch 30s to earn points
@@ -18,6 +19,9 @@ export default function VideoCard({ video, onPointsEarned, onRefreshPoints }) {
   const intervalRef = useRef(null);
   const iframeRef = useRef(null);
   const isOwn = currentUser?.uid === video.submittedBy;
+
+  // Resolve the YouTube ID: prefer stored youtubeId, fall back to extracting from url
+  const youtubeId = video.youtubeId || extractYouTubeId(video.url || '');
 
   const handlePlay = useCallback(() => {
     if (earned || !currentUser || isOwn) return;
@@ -93,16 +97,22 @@ export default function VideoCard({ video, onPointsEarned, onRefreshPoints }) {
               )}
             </div>
           </div>
-        ) : (
+        ) : youtubeId ? (
           <div className={styles.iframeWrapper}>
             <iframe
               ref={iframeRef}
-              src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=1&rel=0&modestbranding=1`}
+              src={`${getYouTubeEmbedUrl(youtubeId)}&autoplay=1`}
               title={video.title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               className={styles.iframe}
             />
+          </div>
+        ) : (
+          <div className={styles.thumbnail}>
+            <p style={{ color: '#aaa', padding: '1rem', textAlign: 'center' }}>
+              Video unavailable — invalid YouTube URL.
+            </p>
           </div>
         )}
       </div>
