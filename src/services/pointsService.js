@@ -60,6 +60,47 @@ export async function awardWatchPoints(userId, videoId) {
   return POINTS.WATCH_VIDEO;
 }
 
+// Like a video — one like per user per video, enforced via Firestore transaction
+export async function likeVideo(userId, videoId) {
+  const likeKey = `${userId}_${videoId}`;
+  const likeRef = doc(db, 'likeEvents', likeKey);
+  const videoRef = doc(db, 'videos', videoId);
+
+  let alreadyLiked = false;
+
+  await runTransaction(db, async (tx) => {
+    const likeSnap = await tx.get(likeRef);
+
+    if (likeSnap.exists()) {
+      alreadyLiked = true;
+      return; // Already liked — do nothing
+    }
+
+    // Record the like (keyed doc prevents any duplicate)
+    tx.set(likeRef, {
+      userId,
+      videoId,
+      likedAt: serverTimestamp(),
+    });
+
+    // Increment likes count on the video
+    tx.update(videoRef, {
+      likes: increment(1),
+    });
+  });
+
+  if (alreadyLiked) throw new Error('already_liked');
+}
+
+// Check if a user has already liked a specific video
+export async function hasUserLiked(userId, videoId) {
+  const { getDoc } = await import('firebase/firestore');
+  const likeKey = `${userId}_${videoId}`;
+  const likeRef = doc(db, 'likeEvents', likeKey);
+  const snap = await getDoc(likeRef);
+  return snap.exists();
+}
+
 // Spend points to promote a video
 export async function promoteVideo(userId, videoId, currentUserPoints) {
   if (currentUserPoints < POINTS.PROMOTE_COST) {
