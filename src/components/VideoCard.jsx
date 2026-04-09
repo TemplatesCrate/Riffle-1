@@ -1,7 +1,7 @@
 // src/components/VideoCard.jsx
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { awardWatchPoints, promoteVideo, POINTS } from '../services/pointsService';
+import { awardWatchPoints, promoteVideo, POINTS, likeVideo, hasUserLiked } from '../services/pointsService';
 import { getYouTubeEmbedUrl, extractYouTubeId } from '../services/videoService';
 import styles from './VideoCard.module.css';
 
@@ -10,12 +10,17 @@ const WATCH_THRESHOLD_SECONDS = 30; // Must watch 30s to earn points
 export default function VideoCard({ video, onPointsEarned, onRefreshPoints }) {
   const { currentUser, userProfile } = useAuth();
   const [playing, setPlaying] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
   const [watchTime, setWatchTime] = useState(0);
   const [earned, setEarned] = useState(false);
   const [earning, setEarning] = useState(false);
   const [promoting, setPromoting] = useState(false);
   const [promoted, setPromoted] = useState(false);
   const [error, setError] = useState('');
+  // Like state
+  const [liked, setLiked] = useState(false);
+  const [liking, setLiking] = useState(false);
+  const [likeCount, setLikeCount] = useState(video.likes || 0);
   const intervalRef = useRef(null);
   const iframeRef = useRef(null);
   const isOwn = currentUser?.uid === video.submittedBy;
@@ -23,9 +28,18 @@ export default function VideoCard({ video, onPointsEarned, onRefreshPoints }) {
   // Resolve the YouTube ID: prefer stored youtubeId, fall back to extracting from url
   const youtubeId = video.youtubeId || extractYouTubeId(video.url || '');
 
+  // Check if this user has already liked this video (on mount, if logged in)
+  useEffect(() => {
+    if (!currentUser) return;
+    hasUserLiked(currentUser.uid, video.id)
+      .then((result) => setLiked(result))
+      .catch(() => {}); // silently ignore — worst case button is not pre-checked
+  }, [currentUser, video.id]);
+
   const handlePlay = useCallback(() => {
     // Always start playing — never block the video itself
     setPlaying(true);
+    setIframeLoaded(false); // reset so spinner shows on each new play
     // Only start the points-earning timer if the user is eligible
     if (earned || !currentUser || isOwn) return;
     intervalRef.current = setInterval(() => {
@@ -54,6 +68,23 @@ export default function VideoCard({ video, onPointsEarned, onRefreshPoints }) {
       setEarning(false);
     }
   }, [earned, earning, currentUser, video.id]);
+
+  const handleLike = async () => {
+    if (!currentUser || liked || liking) return;
+    setLiking(true);
+    try {
+      await likeVideo(currentUser.uid, video.id);
+      setLiked(true);
+      setLikeCount((c) => c + 1);
+    } catch (e) {
+      if (e.message === 'already_liked') {
+        setLiked(true); // sync state in case it was out of sync
+      }
+      // silently ignore other errors — don't crash the UI
+    } finally {
+      setLiking(false);
+    }
+  };
 
   const handlePromote = async () => {
     if (!currentUser || promoting) return;
@@ -101,6 +132,17 @@ export default function VideoCard({ video, onPointsEarned, onRefreshPoints }) {
           </div>
         ) : youtubeId ? (
           <div className={styles.iframeWrapper}>
+            {/* Spinner shown until iframe fires onLoad */}
+            {!iframeLoaded && (
+              <div className={styles.iframeLoader}>
+                <img
+                  src={video.thumbnail}
+                  alt=""
+                  className={styles.iframeLoaderThumb}
+                />
+                <div className={styles.iframeSpinner} />
+              </div>
+            )}
             <iframe
               ref={iframeRef}
               src={`${getYouTubeEmbedUrl(youtubeId)}&autoplay=1`}
@@ -108,6 +150,7 @@ export default function VideoCard({ video, onPointsEarned, onRefreshPoints }) {
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               className={styles.iframe}
+              onLoad={() => setIframeLoaded(true)}
             />
           </div>
         ) : (
@@ -147,6 +190,22 @@ export default function VideoCard({ video, onPointsEarned, onRefreshPoints }) {
         {video.description && (
           <p className={styles.description}>{video.description}</p>
         )}
+
+        {/* Like button row */}
+        <div className={styles.actionsRow}>
+          <button
+            className={`${styles.likeBtn} ${liked ? styles.likeBtnActive : ''}`}
+            onClick={handleLike}
+            disabled={!currentUser || liked || liking}
+            title={!currentUser ? 'Sign in to like' : liked ? 'Already liked' : 'Like this video'}
+          >
+            <span className={styles.likeHeart}>{liked ? '♥' : '♡'}</span>
+            <span className={styles.likeCount}>{likeCount > 0 ? likeCount : ''}</span>
+          </button>
+          {!currentUser && (
+            <span className={styles.likeHint}>Sign in to like</span>
+          )}
+        </div>
 
         {/* Promote button — only for video owner */}
         {isOwn && currentUser && (
