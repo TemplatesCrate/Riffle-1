@@ -1,11 +1,3 @@
-/* src/styles/App.module.css */
-.app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+/* App.module.css content */
 
-.main {
-  flex: 1;
-  padding-top: 64px; /* navbar height */
-}
+/* Add your styles here */
