@@ -1,41 +1,110 @@
-// notificationService.js
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+  doc,
+  updateDoc,
+  serverTimestamp,
+  deleteDoc,
+} from 'firebase/firestore';
+import { db } from '../firebase';
 
-/**
- * Notification Management Service
- */
-
-/**
- * Create a new notification.
- * @param {String} userId - The ID of the user to create a notification for.
- * @param {String} message - The message for the notification.
- */
-function createNotification(userId, message) {
-    // Logic to create a notification
-    console.log(`Notification created for user ${userId}: ${message}`);
+export async function createNotification(userId, type, message, metadata = {}) {
+  try {
+    await addDoc(collection(db, 'notifications'), {
+      userId,
+      type,
+      message,
+      metadata,
+      read: false,
+      createdAt: serverTimestamp(),
+    });
+  } catch (e) {
+    console.error('Failed to create notification:', e);
+  }
 }
 
-/**
- * Mark a notification as read.
- * @param {String} notificationId - The ID of the notification to mark as read.
- */
-function markAsRead(notificationId) {
-    // Logic to mark a notification as read
-    console.log(`Notification ${notificationId} marked as read`);
+export async function markAsRead(notificationId) {
+  try {
+    const notifRef = doc(db, 'notifications', notificationId);
+    await updateDoc(notifRef, { read: true });
+  } catch (e) {
+    console.error('Failed to mark notification as read:', e);
+  }
 }
 
-/**
- * Get all notifications for a user.
- * @param {String} userId - The ID of the user to get notifications for.
- * @returns {Array} - List of notifications.
- */
-function getUserNotifications(userId) {
-    // Logic to get user notifications
-    console.log(`Fetching notifications for user ${userId}`);
+export async function markAllAsRead(userId) {
+  try {
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', userId),
+      where('read', '==', false)
+    );
+    const snap = await getDocs(q);
+    for (const docSnap of snap.docs) {
+      await updateDoc(docSnap.ref, { read: true });
+    }
+  } catch (e) {
+    console.error('Failed to mark all as read:', e);
+  }
+}
+
+export async function getUnreadNotifications(userId, limitCount = 20) {
+  try {
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', userId),
+      where('read', '==', false),
+      orderBy('createdAt', 'desc'),
+      limit(limitCount)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    console.error('Failed to get unread notifications:', e);
     return [];
+  }
 }
 
-module.exports = {
-    createNotification,
-    markAsRead,
-    getUserNotifications
-};
+export async function getUserNotifications(userId, limitCount = 50) {
+  try {
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
+      limit(limitCount)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    console.error('Failed to get notifications:', e);
+    return [];
+  }
+}
+
+export async function deleteNotification(notificationId) {
+  try {
+    await deleteDoc(doc(db, 'notifications', notificationId));
+  } catch (e) {
+    console.error('Failed to delete notification:', e);
+  }
+}
+
+export async function getUnreadCount(userId) {
+  try {
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', userId),
+      where('read', '==', false)
+    );
+    const snap = await getDocs(q);
+    return snap.size;
+  } catch (e) {
+    console.error('Failed to get unread count:', e);
+    return 0;
+  }
+}
