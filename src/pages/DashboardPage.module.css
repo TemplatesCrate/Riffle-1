@@ -1,3 +1,16 @@
-.dashboardPage {
-    /* styles for Dashboard Page */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.container h1 {
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.container p {
+  color: #999;
+  font-size: 16px;
 }
