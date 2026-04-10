@@ -1,3 +1,15 @@
-/* App.module.css content */
+.app {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 
-/* Add your styles here */
+.app > nav {
+  flex-shrink: 0;
+}
+
+.app > div:not(nav) {
+  flex: 1;
+  background-color: #f5f5f5;
+}
