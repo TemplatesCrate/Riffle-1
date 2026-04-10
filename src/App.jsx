@@ -4,6 +4,7 @@ import { useAuth } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
 import AuthPage from './pages/AuthPage';
 import FeedPage from './pages/FeedPage';
+import PublicFeedPage from './pages/PublicFeedPage';
 import SubmitPage from './pages/SubmitPage';
 import ProfilePage from './pages/ProfilePage';
 import DashboardPage from './pages/DashboardPage';
@@ -24,12 +25,26 @@ function App() {
     <div className="app">
       <Navbar />
       <Routes>
+        {/* Public Routes - No login required */}
+        <Route path="/" element={<PublicFeedPage />} />
+        <Route path="/feed" element={<PublicFeedPage />} />
+        
+        {/* Auth Page */}
         <Route path="/auth" element={<AuthPage />} />
-        <Route path="/feed" element={currentUser ? <FeedPage /> : <Navigate to="/auth" />} />
-        <Route path="/submit" element={currentUser ? <SubmitPage /> : <Navigate to="/auth" />} />
-        <Route path="/profile" element={currentUser ? <ProfilePage /> : <Navigate to="/auth" />} />
-        <Route path="/dashboard" element={currentUser ? <DashboardPage /> : <Navigate to="/auth" />} />
-        <Route path="/" element={currentUser ? <Navigate to="/feed" /> : <Navigate to="/auth" />} />
+
+        {/* Protected Routes - Login required */}
+        <Route 
+          path="/submit" 
+          element={currentUser ? <SubmitPage /> : <Navigate to="/auth" />} 
+        />
+        <Route 
+          path="/profile" 
+          element={currentUser ? <ProfilePage /> : <Navigate to="/auth" />} 
+        />
+        <Route 
+          path="/dashboard" 
+          element={currentUser ? <DashboardPage /> : <Navigate to="/auth" />} 
+        />
       </Routes>
     </div>
   );
