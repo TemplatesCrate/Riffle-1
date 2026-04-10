@@ -1,0 +1,97 @@
+.popup {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 16px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.3s ease-out, slideOut 0.3s ease-out 2.7s forwards;
+  z-index: 2000;
+  font-weight: 600;
+}
+
+.popup.earn {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
+}
+
+.popup.spend {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: white;
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.label {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.points {
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .popup {
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    animation: slideInMobile 0.3s ease-out, slideOutMobile 0.3s ease-out 2.7s forwards;
+  }
+
+  @keyframes slideInMobile {
+    from {
+      transform: translateY(100px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideOutMobile {
+    from {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(100px);
+      opacity: 0;
+    }
+  }
+}
