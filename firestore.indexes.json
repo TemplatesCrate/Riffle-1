@@ -1,1 +1,29 @@
-{"indexes":[{"collectionGroup":"videos","queryScope":"COLLECTION","fields":[{"fieldPath":"submittedBy","order":"ASCENDING"},{"fieldPath":"submittedAt","order":"DESCENDING"}]},{"collectionGroup":"videos","queryScope":"COLLECTION","fields":[{"fieldPath":"promoted","order":"DESCENDING"},{"fieldPath":"promotionScore","order":"DESCENDING"},{"fieldPath":"submittedAt","order":"DESCENDING"}]},{"collectionGroup":"users","queryScope":"COLLECTION","fields":[{"fieldPath":"inviteCode","order":"ASCENDING"}]}],"fieldOverrides":[]}
+{
+  "indexes": [
+    {
+      "collectionGroup": "videos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "submittedBy", "order": "ASCENDING" },
+        { "fieldPath": "submittedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "videos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "promoted", "order": "DESCENDING" },
+        { "fieldPath": "promotionScore", "order": "DESCENDING" },
+        { "fieldPath": "submittedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "inviteCode", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
