@@ -1,52 +1,55 @@
-// firestore.rules
-// Deploy with: firebase deploy --only firestore:rules
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Users: only readable by owner, writable only via server logic
-    match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Videos: anyone can read, only authenticated users can create
-    match /videos/{videoId} {
+    // Allow anyone to read videos
+    match /videos/{document=**} {
       allow read: if true;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null; // Points/promotions update this
+      allow write: if false;
     }
 
-    // Watch events: authenticated users can create their own
-    match /watchEvents/{eventId} {
+    // Users can only access their own profile
+    match /users/{userId} {
+      allow read: if request.auth.uid == userId;
+      allow write: if request.auth.uid == userId;
+    }
+
+    // Users can only access their own notifications
+    match /notifications/{notifId} {
+      allow read, write: if request.auth != null &&
+        get(/databases/$(database)/documents/notifications/$(notifId)).data.userId == request.auth.uid;
+    }
+
+    // Watch events
+    match /watchEvents/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Like events
+    match /likeEvents/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Ad impressions
+    match /adImpressions/{document=**} {
+      allow write: if request.auth != null;
+      allow read: if false;
+    }
+
+    // Ad stats
+    match /adStats/{document=**} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null;
+      allow write: if false;
     }
 
-    // Promotion events: authenticated users can create
-    match /promotionEvents/{eventId} {
+    // Promotion events
+    match /promotionEvents/{document=**} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null;
+      allow write: if false;
     }
 
-    // Invite events: authenticated users can create
-    match /inviteEvents/{eventId} {
-      allow read: if request.auth != null;
-      allow create: if true; // Created during signup (before full auth)
-    }
-
-    // Ad impressions: write-only for all, read only for admins
-    match /adImpressions/{docId} {
-      allow create: if true;
-      allow read: if false; // FUTURE: allow admin role
-    }
-
-    // Ad stats aggregates
-    match /adStats/{docId} {
-      allow read: if false; // FUTURE: allow admin role
-      allow write: if true;
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
